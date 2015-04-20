@@ -1,3 +1,4 @@
+#coding:utf-8
 # Usage:
 #
 #   python localized.py > Localization.strings
@@ -11,37 +12,42 @@
 #
 # This script is heavily copied from: https://github.com/dunkelstern/Cocoa-Localisation-Helper
 
-import os, re, subprocess
-import fnmatch
+from __future__ import print_function
+import os, sys, re, subprocess, codecs, traceback
 
-def fetch_files_recursive(directory, extension):
+
+def fetch_files_recursive(directory, *extensions):
     matches = []
     for root, dirnames, filenames in os.walk(directory):
-      for filename in fnmatch.filter(filenames, '*' + extension):
-          matches.append(os.path.join(root, filename))
+	for filename in filenames:
+	    for ext in extensions:
+	        if filename.endswith(ext):
+		    matches.append(os.path.join(root, filename))
+		    break
     return matches
     
 
 # prepare regexes
-localizedStringComment = re.compile('NSLocalizedString\(@"([^"]*)",\s*@"([^"]*)"\s*\)', re.DOTALL)
-localizedStringNil = re.compile('NSLocalizedString\(@"([^"]*)",\s*nil\s*\)', re.DOTALL)
-localized = re.compile('Localized\(@"([^"]*)"\)', re.DOTALL)
+localizedStringComment = re.compile('NSLocalizedString\(@"(.*?)",\s*@"(.*?)"\s*\)', re.DOTALL)
+localized = re.compile('I\(@"(.*?)"\)', re.DOTALL)
 
 # get string list
 uid = 0
 strings = []
-for file in fetch_files_recursive('.', '.m'):
-    with open(file, 'r') as f:
-        content = f.read()
-        for result in localizedStringComment.finditer(content):
-            uid += 1
-            strings.append((result.group(1), result.group(2), file, uid))
-        for result in localizedStringNil.finditer(content):
-            uid += 1
-            strings.append((result.group(1), '', file, uid))
-        for result in localized.finditer(content):
-            uid += 1
-            strings.append((result.group(1), '', file, uid))
+for file in fetch_files_recursive('.', '.m', '.mm', '.h'):
+    with codecs.open(file, 'r', encoding='utf-8') as f:
+        try:
+	    content = f.read()
+            for result in localizedStringComment.finditer(content):
+                uid += 1
+                strings.append((result.group(1), result.group(2), file, uid))
+            for result in localized.finditer(content):
+                uid += 1
+                strings.append((result.group(1), '', file, uid))
+	except:
+	    #不是utf8的文件直接pass
+	    print(file+' is not utf8,pass', file=sys.stderr)
+	    traceback.print_exc(file=sys.stderr)
 
 # find duplicates
 duplicated = []
@@ -54,7 +60,8 @@ for string1 in strings:
         if string1[0] == string2[0]:
             if string1[2] != string2[2]:
                 dupmatch = 1
-            break
+		#需要循环完
+            	break
     if dupmatch == 1:
         dupmatch = 0
         for string2 in duplicated:
@@ -75,31 +82,26 @@ for string1 in strings:
         if dupmatch == 0:
             filestrings[string1[2]].append(string1)
 
+print('//This file is auto generate by genstring.py from project https://github.com/rayer4u/xcode-tool\n\n')
 # output filewise
 for key in filestrings.keys():
-    print '/*\n * ' + key + '\n */\n'
+    print('/*\n * ' + key + '\n */\n')
 
     strings = filestrings[key]
     for string in strings:
-        if string[1] == '':
-            print '"' + string[0] + '" = "' + string[0] + '";'
-            print
-        else:
-            print '/* ' + string[1] + ' */'
-            print '"' + string[0] + '" = "' + string[0] + '";'
-            print
-    print '\n\n\n\n\n'
+        if string[1] != '':
+	    print('/* ' + string[1] + ' */')
+        print ('"' + string[0].encode('utf8') + '" = "' + string[0].encode('utf8') + '";')
+        print('\n')
+    print ('\n')
 
 
-print '\n\n\n\n\n'
-print '/*\n * SHARED STRINGS\n */\n'
+print('\n\n')
+print('/*\n * SHARED STRINGS\n */\n')
 
 # output duplicates
 for string in duplicated:
-    if string[1] == '':
-        print '"' + string[0] + '" = "' + string[0] + '";'
-        print
-    else:
-        print '/* ' + string[1] + ' */'
-        print '"' + string[0] + '" = "' + string[0] + '";'
-        print
+    if string[1] != '':
+        print('/* ' + string[1] + ' */')
+    print ('"' + string[0].encode('utf8') + '" = "' + string[0].encode('utf8') + '";')
+    print('\n')
