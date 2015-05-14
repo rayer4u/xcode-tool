@@ -10,8 +10,9 @@ with codecs.open('zh-Hans.lproj/Localizable.strings', 'r', encoding='utf-8') as 
 	for line in f.readlines():
 	    result = repl.match(line)
 	    if result:
-		key = result.group(1) 
-	 	fw.write('"'+key+'" = "'+opencc.convert(key, config='s2t.json')+'";')
+		key = result.group(1)
+		value = result.group(2) 
+	 	fw.write('"'+key+'" = "'+opencc.convert(value, config='s2t.json')+'";')
 	    else:
 		fw.write(line)
 

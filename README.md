@@ -5,7 +5,7 @@ This project has 2 components:
 
 1. `genstrings.py` - Replace Apple's closed sourced genstrings with a Python replacement. origin from project [samwize/localized](https://github.com/samwize/localized)
 
-2. `` - 
+2. `zhs2t.py` - Auto genrate zh-Hant.lproj/Localizable.strings basing zh-Hans.lproj/Localizable.strings using opencc for translate. opencc can be installed by brew. opencc-python must use https://github.com/lepture/opencc-python. pip version is too old. 
 
 
 Python genstrings
